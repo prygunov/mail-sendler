@@ -9,6 +9,7 @@ import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
@@ -17,7 +18,7 @@ public interface GroupContactService {
 
     ParsingResult saveContactsFromFile(Long id, MultipartFile file) throws IOException;
 
-    void exportContactsIn(Long id, Writer writer) throws IOException;
+    ByteArrayInputStream exportContacts(Long id) throws IOException;
 
     ResponsePage<ContactDto> getContacts(Long id, QueryPage queryPage);
 
@@ -31,4 +32,6 @@ public interface GroupContactService {
     List<ContactDto> createContacts(Long id, List<CreateContactDto> dtos);
 
     boolean putContacts(Long id, List<Long> ids);
+
+    boolean deleteGroup(Long id, boolean deleteContacts);
 }

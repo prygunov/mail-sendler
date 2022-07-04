@@ -8,8 +8,10 @@ import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.util.List;
 
 @Setter
 @Getter
@@ -26,6 +28,9 @@ public class ContactEntity extends BaseEntity {
     @CsvBindByPosition(position = 1)
     private String email;
     private boolean disabled;
+
+    @ManyToMany
+    private List<ContactGroupEntity> groups;
 
     @Override
     public boolean equals(Object o) {

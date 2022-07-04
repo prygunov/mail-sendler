@@ -11,20 +11,15 @@ import net.artux.mupse.model.contact.ParsingResult;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import net.artux.mupse.service.contact.GroupContactService;
+import org.apache.commons.io.IOUtils;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -36,18 +31,20 @@ public class GroupContactController {
 
     private final GroupContactService service;
 
-    @Operation(summary = "Загрузка контактов в  группу csv-файлом")
+    @Operation(summary = "Загрузка контактов в  группу xlsx-файлом")
     @PostMapping(value = "/{id}/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ParsingResult uploadContacts(@PathVariable("id") Long id, @RequestPart(value = "file") final MultipartFile file) throws IOException {
         return service.saveContactsFromFile(id, file);
     }
 
-    @Operation(summary = "Выгрузка контактов группы csv-файлом")
+    @Operation(summary = "Выгрузка контактов группы xlsx-файлом")
     @GetMapping("/{id}/export")
     public void allContacts(@PathVariable("id") Long id, HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv");
-        response.addHeader("Content-Disposition", "attachment; filename=\"contacts.csv\"");
-        service.exportContactsIn(id, response.getWriter());
+        response.setContentType("application/octet-stream");
+        response.addHeader("Content-Disposition", "attachment; filename=\"contacts.xlsx\"");
+
+        ByteArrayInputStream stream = service.exportContacts(id);
+        IOUtils.copy(stream, response.getOutputStream());
     }
 
     @Operation(summary = "Получение контактов группы страницами")
@@ -80,4 +77,11 @@ public class GroupContactController {
     public boolean putContacts(@PathVariable("id") Long id, @RequestBody @Valid List<Long> ids) {
         return service.putContacts(id, ids);
     }
+
+    @Operation(summary = "Удалить группу")
+    @DeleteMapping("/{id}")
+    public boolean deleteGroup(@PathVariable("id") Long id, boolean deleteContacts){
+        return service.deleteGroup(id, deleteContacts);
+    }
+
 }

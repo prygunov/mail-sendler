@@ -1,6 +1,5 @@
 package net.artux.mupse.repository.contact;
 
-import jdk.dynalink.Operation;
 import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.user.UserEntity;
 import org.springframework.data.domain.Page;
@@ -17,11 +16,14 @@ import java.util.Set;
 public interface ContactRepository extends JpaRepository<ContactEntity, Long> {
 
     Optional<ContactEntity> findByOwner(UserEntity owner);
+
+    Optional<ContactEntity> findByOwnerAndId(UserEntity owner, Long id);
+
     Optional<ContactEntity> findByOwnerAndEmailIgnoreCase(UserEntity owner, String email);
 
     List<ContactEntity> findAllByOwner(UserEntity owner);
 
-    Page<ContactEntity> findAllByOwner(UserEntity owner, Pageable pageable);
+    Page<ContactEntity> findAllByOwnerAndNameContainingIgnoreCase(UserEntity owner, String search, Pageable pageable);
 
     List<ContactEntity> findAllByEmailInAndOwner(Set<String> emails, UserEntity entity);
 
@@ -34,5 +36,7 @@ public interface ContactRepository extends JpaRepository<ContactEntity, Long> {
     @Query(value = "select * from contact c where c.owner_id = ?1 and email in " +
             "(select email from temp_contact tc where tc.owner_id = ?1)", nativeQuery = true)
     List<ContactEntity> getCollisionContacts(Long ownerId);
+
+    void deleteAllByOwner(UserEntity user);
 
 }

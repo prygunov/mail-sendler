@@ -3,24 +3,25 @@ package net.artux.mupse.service.contact;
 import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.entity.contact.ContactEntity;
-import net.artux.mupse.model.contact.ContactContainer;
-import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.ContactMapper;
-import net.artux.mupse.model.contact.CreateContactDto;
-import net.artux.mupse.model.contact.ParsingResult;
+import net.artux.mupse.model.contact.*;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
-import net.artux.mupse.repository.contact.ContactGroupRepository;
 import net.artux.mupse.repository.contact.ContactRepository;
+import net.artux.mupse.repository.contact.TempContactRepository;
 import net.artux.mupse.service.user.UserService;
 import net.artux.mupse.service.util.PageService;
 import net.artux.mupse.service.util.SortService;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.io.output.WriterOutputStream;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.Writer;
+import javax.transaction.Transactional;
+import java.io.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.List;
 public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository repository;
-    private final ContactGroupRepository groupRepository;
+    private final TempContactRepository tempRepository;
     private final ContactMapper mapper;
 
     private final UserService userService;
@@ -52,21 +53,48 @@ public class ContactServiceImpl implements ContactService {
 
 
     @Override
-    public void exportContacts(Writer writer) throws IOException {
-        CSVWriter csvWriter = new CSVWriter(writer);
-        String[] content = new String[2];
-        for (ContactEntity contactEntity : repository.findAllByOwner(userService.getUserEntity())) {
-            content[0] = contactEntity.getName();
-            content[1] = contactEntity.getEmail();
-            csvWriter.writeNext(content);
-        }
+    public ByteArrayInputStream exportContacts() throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("contacts");
 
-        csvWriter.close();
+        CellStyle headerCellStyle = workbook.createCellStyle();
+        headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
+        headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        Row row = sheet.createRow(0);
+        Cell cell = row.createCell(0);
+        cell.setCellValue("email");
+        cell.setCellStyle(headerCellStyle);
+
+        cell = row.createCell(1);
+        cell.setCellValue("name");
+        cell.setCellStyle(headerCellStyle);
+
+        List<ContactEntity> contactEntities = repository.findAllByOwner(userService.getUserEntity());
+        for (int i = 0; i<contactEntities.size(); i++) {
+            Row header = sheet.createRow(1 + i);
+            ContactEntity contactEntity = contactEntities.get(i);
+            Cell headerCell = header.createCell(0);
+            headerCell.setCellStyle(headerCellStyle);
+            headerCell.setCellValue(contactEntity.getEmail());
+
+            headerCell = header.createCell(1);
+            headerCell.setCellStyle(headerCellStyle);
+            headerCell.setCellValue(contactEntity.getName());
+        }
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
     @Override
-    public ResponsePage<ContactDto> getContacts(QueryPage queryPage) {
-        Page<ContactEntity> contactEntities = repository.findAllByOwner(userService.getUserEntity(), sortService.getSortInfo(ContactDto.class, queryPage, "name"));
+    public ResponsePage<ContactDto> getContacts(QueryPage queryPage, String search) {
+        Page<ContactEntity> contactEntities = repository.findAllByOwnerAndNameContainingIgnoreCase(userService.getUserEntity(), search, sortService.getSortInfo(ContactDto.class, queryPage, "name"));
         return pageService.mapDataPageToResponsePage(contactEntities, mapper.dto(contactEntities.getContent()));
     }
 
@@ -75,8 +103,9 @@ public class ContactServiceImpl implements ContactService {
             throw new RuntimeException("Контакт с таким адресом уже существует.");
 
         ContactEntity entity = new ContactEntity();
-        dto.setName(dto.getName());
-        dto.setEmail(dto.getEmail());
+        entity.setName(dto.getName());
+        entity.setEmail(dto.getEmail());
+        entity.setOwner(userService.getUserEntity());
         return repository.save(entity);
     }
 
@@ -88,12 +117,26 @@ public class ContactServiceImpl implements ContactService {
     @Override
     public List<ContactDto> createContacts(List<CreateContactDto> dtos) {
         List<ContactDto> result = new LinkedList<>();
-        for (CreateContactDto contactDto : dtos){
+        for (CreateContactDto contactDto : dtos) {
             try {
                 result.add(mapper.dto(createContactEntity(contactDto)));
-            }catch (RuntimeException ignored){}
+            } catch (RuntimeException ignored) {
+            }
         }
         return result;
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteAllContacts() {
+        repository.deleteAllByOwner(userService.getUserEntity());
+        tempRepository.deleteAllByOwner(userService.getUserEntity());
+        return true;
+    }
+
+    @Override
+    public ContactDto getContact(Long id) {
+        return mapper.dto(repository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow());
     }
 
 
