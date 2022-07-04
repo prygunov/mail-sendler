@@ -18,8 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,9 +38,9 @@ public class TempContactService {
 
         List<TempContactEntity> result = new LinkedList<>();
         for (Row row : sheet) {
-            if (row.getCell(1)!=null && row.getCell(2)!=null) {
-                String email = row.getCell(1).getStringCellValue();
-                String name = row.getCell(2).getStringCellValue();
+            if (row.getCell(0) != null && row.getCell(1) != null) {
+                String email = row.getCell(0).getStringCellValue();
+                String name = row.getCell(1).getStringCellValue();
                 if (!StringUtils.isEmpty(email)) {
                     TempContactEntity contactEntity = new TempContactEntity();
                     contactEntity.setEmail(

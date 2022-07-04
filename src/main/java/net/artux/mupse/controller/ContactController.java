@@ -41,7 +41,7 @@ public class ContactController {
         response.setContentType("application/octet-stream");
         response.addHeader("Content-Disposition", "attachment; filename=\"contacts.xlsx\"");
 
-        ByteArrayInputStream stream = service.exportContacts();
+        ByteArrayInputStream stream = service.exportAllContacts();
         IOUtils.copy(stream, response.getOutputStream());
     }
 

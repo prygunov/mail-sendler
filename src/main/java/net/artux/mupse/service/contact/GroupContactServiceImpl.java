@@ -3,7 +3,13 @@ package net.artux.mupse.service.contact;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.contact.ContactGroupEntity;
-import net.artux.mupse.model.contact.*;
+import net.artux.mupse.model.contact.ContactContainer;
+import net.artux.mupse.model.contact.ContactDto;
+import net.artux.mupse.model.contact.ContactGroupCreateDto;
+import net.artux.mupse.model.contact.ContactGroupDto;
+import net.artux.mupse.model.contact.ContactMapper;
+import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ParsingResult;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import net.artux.mupse.repository.contact.ContactGroupRepository;
@@ -11,9 +17,6 @@ import net.artux.mupse.repository.contact.ContactRepository;
 import net.artux.mupse.service.user.UserService;
 import net.artux.mupse.service.util.PageService;
 import net.artux.mupse.service.util.SortService;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,7 +55,8 @@ public class GroupContactServiceImpl implements GroupContactService {
         groupContacts.addAll(container.getCollisionContacts().stream()
                 .filter(t -> groupContacts.stream().noneMatch(t::equals))
                 .toList());
-
+        groupEntity.setContacts(groupContacts);
+        groupRepository.save(groupEntity);
         int regexRejected = container.getRegexRejected();
         int collisionRejected = container.getCollisionContacts().size();
 
@@ -62,42 +66,8 @@ public class GroupContactServiceImpl implements GroupContactService {
 
     @Override
     public ByteArrayInputStream exportContacts(Long id) throws IOException {
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("contacts");
+        return contactService.exportContacts(contactRepository.findAllByGroupAndOwner(id, userService.getUserEntity().getId()));
 
-        CellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
-        headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        Row row = sheet.createRow(0);
-        Cell cell = row.createCell(0);
-        cell.setCellValue("email");
-        cell.setCellStyle(headerCellStyle);
-
-        cell = row.createCell(1);
-        cell.setCellValue("name");
-        cell.setCellStyle(headerCellStyle);
-
-        List<ContactEntity> contactEntities = contactRepository.findAllByGroupAndOwner(id, userService.getUserEntity().getId());
-        for (int i = 0; i<contactEntities.size(); i++) {
-            Row header = sheet.createRow(1 + i);
-            ContactEntity contactEntity = contactEntities.get(i);
-            Cell headerCell = header.createCell(0);
-            headerCell.setCellStyle(headerCellStyle);
-            headerCell.setCellValue(contactEntity.getEmail());
-
-            headerCell = header.createCell(1);
-            headerCell.setCellStyle(headerCellStyle);
-            headerCell.setCellValue(contactEntity.getName());
-        }
-        sheet.autoSizeColumn(0);
-        sheet.autoSizeColumn(1);
-
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        workbook.write(outputStream);
-        workbook.close();
-        return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
     @Override
@@ -163,7 +133,7 @@ public class GroupContactServiceImpl implements GroupContactService {
     @Override
     public boolean deleteGroup(Long id, boolean deleteContacts) {
         ContactGroupEntity groupEntity = groupRepository.findById(id).orElseThrow();
-        if (deleteContacts){
+        if (deleteContacts) {
             contactRepository.deleteAll(groupEntity.getContacts());
         }
         groupRepository.delete(groupEntity);

@@ -2,6 +2,7 @@ package net.artux.mupse.repository.contact;
 
 import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.user.UserEntity;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,7 +24,7 @@ public interface ContactRepository extends JpaRepository<ContactEntity, Long> {
 
     List<ContactEntity> findAllByOwner(UserEntity owner);
 
-    Page<ContactEntity> findAllByOwnerAndNameContainingIgnoreCase(UserEntity owner, String search, Pageable pageable);
+    Page<ContactEntity> findAllByOwner(UserEntity owner, Example<ContactEntity> example, Pageable pageable);
 
     List<ContactEntity> findAllByEmailInAndOwner(Set<String> emails, UserEntity entity);
 

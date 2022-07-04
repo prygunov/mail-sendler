@@ -1,13 +1,13 @@
 package net.artux.mupse.entity.contact;
 
-import com.opencsv.bean.CsvBindByName;
-import com.opencsv.bean.CsvBindByPosition;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -16,20 +16,19 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
+@NoArgsConstructor
 @Table(name = "contact")
 public class ContactEntity extends BaseEntity {
 
     @ManyToOne
     private UserEntity owner;
 
-    @CsvBindByPosition(position = 0)
     private String name;
 
-    @CsvBindByPosition(position = 1)
     private String email;
     private boolean disabled;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<ContactGroupEntity> groups;
 
     @Override
@@ -42,4 +41,8 @@ public class ContactEntity extends BaseEntity {
         return id == entity.id;
     }
 
+    public ContactEntity(UserEntity owner, String name) {
+        this.owner = owner;
+        this.name = name;
+    }
 }

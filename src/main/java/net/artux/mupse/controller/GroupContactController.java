@@ -62,7 +62,7 @@ public class GroupContactController {
 
     @Operation(summary = "Создание группы")
     @PostMapping
-    public ContactGroupDto createGroup(@Valid ContactGroupCreateDto dto) {
+    public ContactGroupDto createGroup(@Valid @RequestBody ContactGroupCreateDto dto) {
         return service.createGroup(dto);
     }
 

@@ -1,9 +1,12 @@
 package net.artux.mupse.service.contact;
 
-import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.entity.contact.ContactEntity;
-import net.artux.mupse.model.contact.*;
+import net.artux.mupse.model.contact.ContactContainer;
+import net.artux.mupse.model.contact.ContactDto;
+import net.artux.mupse.model.contact.ContactMapper;
+import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ParsingResult;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import net.artux.mupse.repository.contact.ContactRepository;
@@ -12,16 +15,20 @@ import net.artux.mupse.service.user.UserService;
 import net.artux.mupse.service.util.PageService;
 import net.artux.mupse.service.util.SortService;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.commons.io.output.WriterOutputStream;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,27 +60,25 @@ public class ContactServiceImpl implements ContactService {
 
 
     @Override
-    public ByteArrayInputStream exportContacts() throws IOException {
+    public ByteArrayInputStream exportAllContacts() throws IOException {
+        return exportContacts(repository.findAllByOwner(userService.getUserEntity()));
+    }
+
+    public ByteArrayInputStream exportContacts(List<ContactEntity> contacts) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("contacts");
 
         CellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
-        headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
         Row row = sheet.createRow(0);
         Cell cell = row.createCell(0);
-        cell.setCellValue("email");
         cell.setCellStyle(headerCellStyle);
 
         cell = row.createCell(1);
-        cell.setCellValue("name");
         cell.setCellStyle(headerCellStyle);
 
-        List<ContactEntity> contactEntities = repository.findAllByOwner(userService.getUserEntity());
-        for (int i = 0; i<contactEntities.size(); i++) {
-            Row header = sheet.createRow(1 + i);
-            ContactEntity contactEntity = contactEntities.get(i);
+        for (int i = 0; i < contacts.size(); i++) {
+            Row header = sheet.createRow(i);
+            ContactEntity contactEntity = contacts.get(i);
             Cell headerCell = header.createCell(0);
             headerCell.setCellStyle(headerCellStyle);
             headerCell.setCellValue(contactEntity.getEmail());
@@ -92,9 +97,13 @@ public class ContactServiceImpl implements ContactService {
         return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
+
     @Override
     public ResponsePage<ContactDto> getContacts(QueryPage queryPage, String search) {
-        Page<ContactEntity> contactEntities = repository.findAllByOwnerAndNameContainingIgnoreCase(userService.getUserEntity(), search, sortService.getSortInfo(ContactDto.class, queryPage, "name"));
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+        Example<ContactEntity> example = Example.of(new ContactEntity(userService.getUserEntity(), search), matcher);
+        Page<ContactEntity> contactEntities = repository.findAll(example, sortService.getSortInfo(ContactDto.class, queryPage, "name"));
         return pageService.mapDataPageToResponsePage(contactEntities, mapper.dto(contactEntities.getContent()));
     }
 

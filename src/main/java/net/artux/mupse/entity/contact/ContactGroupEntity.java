@@ -22,7 +22,7 @@ public class ContactGroupEntity extends BaseEntity {
     private String name;
     private String description;
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "groups")
     private List<ContactEntity> contacts;
 
 }
