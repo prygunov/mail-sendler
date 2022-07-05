@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class UserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity entity = repository.findByLogin(username).orElseThrow();
+        UserEntity entity = repository.findByLogin(username).orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден."));
         List<SimpleGrantedAuthority> authorities = Collections
                 .singletonList(new SimpleGrantedAuthority(entity.getRole().name()));
         return new SecurityUser(entity.getLogin(), entity.getPassword(), authorities, entity);

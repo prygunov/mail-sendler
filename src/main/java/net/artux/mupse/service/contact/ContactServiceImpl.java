@@ -2,13 +2,11 @@ package net.artux.mupse.service.contact;
 
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.entity.contact.ContactEntity;
-import net.artux.mupse.model.contact.ContactContainer;
-import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.ContactMapper;
-import net.artux.mupse.model.contact.CreateContactDto;
-import net.artux.mupse.model.contact.ParsingResult;
+import net.artux.mupse.entity.user.UserEntity;
+import net.artux.mupse.model.contact.*;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
+import net.artux.mupse.repository.contact.ContactGroupRepository;
 import net.artux.mupse.repository.contact.ContactRepository;
 import net.artux.mupse.repository.contact.TempContactRepository;
 import net.artux.mupse.service.user.UserService;
@@ -32,12 +30,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository repository;
+    private final ContactGroupRepository groupRepository;
     private final TempContactRepository tempRepository;
     private final ContactMapper mapper;
 
@@ -107,28 +107,26 @@ public class ContactServiceImpl implements ContactService {
         return pageService.mapDataPageToResponsePage(contactEntities, mapper.dto(contactEntities.getContent()));
     }
 
-    ContactEntity createContactEntity(CreateContactDto dto) {
+    @Override
+    public ContactEntity createContactWithOwner(UserEntity user, CreateContactDto dto) {
         if (repository.findByOwnerAndEmailIgnoreCase(userService.getUserEntity(), dto.getEmail()).isPresent())
             throw new RuntimeException("Контакт с таким адресом уже существует.");
 
         ContactEntity entity = new ContactEntity();
         entity.setName(dto.getName());
         entity.setEmail(dto.getEmail());
-        entity.setOwner(userService.getUserEntity());
+        entity.setOwner(user);
+        entity.setToken(UUID.randomUUID());
         return repository.save(entity);
     }
 
     @Override
-    public ContactDto createContact(CreateContactDto dto) {
-        return mapper.dto(createContactEntity(dto));
-    }
-
-    @Override
     public List<ContactDto> createContacts(List<CreateContactDto> dtos) {
+        UserEntity user = userService.getUserEntity();
         List<ContactDto> result = new LinkedList<>();
         for (CreateContactDto contactDto : dtos) {
             try {
-                result.add(mapper.dto(createContactEntity(contactDto)));
+                result.add(mapper.dto(createContactWithOwner(user, contactDto)));
             } catch (RuntimeException ignored) {
             }
         }
@@ -150,10 +148,11 @@ public class ContactServiceImpl implements ContactService {
 
 
     @Override
-    public ContactDto editContact(ContactDto contactDto) {
-        ContactEntity entity = repository.findById(contactDto.getId()).orElseThrow();
+    public ContactDto editContact(Long id, CreateContactDto contactDto) {
+        ContactEntity entity = repository.findById(id).orElseThrow();
         entity.setEmail(contactDto.getEmail());
         entity.setName(contactDto.getName());
+        entity.setGroups(groupRepository.findAllById(contactDto.getGroups()));
 
         return mapper.dto(repository.save(entity));
     }

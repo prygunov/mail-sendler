@@ -8,6 +8,7 @@ public class ContactGroupDto {
     private long id;
     private String name;
     private String description;
+    private String hexColor;
     private int contacts;
 
 }

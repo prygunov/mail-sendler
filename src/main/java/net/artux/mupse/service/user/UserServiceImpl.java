@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 @Service
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
         UserEntity user = mapper.entity(registerUser);
         user.setRole(RoleType.USER);
         user.setPassword(encoder.encode(user.getPassword()));
+        user.setToken(UUID.randomUUID());
         return mapper.dto(repository.save(user));
     }
 

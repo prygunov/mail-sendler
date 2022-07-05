@@ -63,10 +63,10 @@ public class ContactController {
         return service.createContacts(contactDto);
     }
 
-    @Operation(summary = "Изменение контакта (id в теле)")
-    @PutMapping
-    public ContactDto editContact(@Valid @RequestBody ContactDto contactDto) {
-        return service.editContact(contactDto);
+    @Operation(summary = "Изменение контакта")
+    @PutMapping("/{id}")
+    public ContactDto editContact(@PathVariable("id") Long id, @Valid @RequestBody CreateContactDto contactDto) {
+        return service.editContact(id, contactDto);
     }
 
     @Operation(summary = "Удаление контактов навсегда")

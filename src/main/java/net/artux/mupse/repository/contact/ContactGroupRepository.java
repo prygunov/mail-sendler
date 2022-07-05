@@ -2,6 +2,7 @@ package net.artux.mupse.repository.contact;
 
 import net.artux.mupse.entity.contact.ContactGroupEntity;
 import net.artux.mupse.entity.user.UserEntity;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,9 @@ import java.util.Optional;
 public interface ContactGroupRepository extends JpaRepository<ContactGroupEntity, Long> {
 
     Page<ContactGroupEntity> findAllByOwner(UserEntity entity, Pageable pageable);
+
     Optional<ContactGroupEntity> findByOwnerAndName(UserEntity entity, String name);
+
+    Optional<ContactGroupEntity> findByOwnerAndId(UserEntity entity, Long id);
 
 }

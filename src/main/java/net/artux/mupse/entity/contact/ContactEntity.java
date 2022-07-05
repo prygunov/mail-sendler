@@ -1,22 +1,20 @@
 package net.artux.mupse.entity.contact;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Setter
 @Getter
 @Entity
-@NoArgsConstructor
+@RequiredArgsConstructor
 @Table(name = "contact")
 public class ContactEntity extends BaseEntity {
 
@@ -24,11 +22,17 @@ public class ContactEntity extends BaseEntity {
     private UserEntity owner;
 
     private String name;
-
     private String email;
+
+    @Column(unique = true)
+    private UUID token;
+
     private boolean disabled;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
+    @JoinTable(name = "contact_group_contacts",
+            joinColumns = @JoinColumn(name = "contacts_id"),
+            inverseJoinColumns = @JoinColumn(name = "groups_id"))
     private List<ContactGroupEntity> groups;
 
     @Override
@@ -38,11 +42,17 @@ public class ContactEntity extends BaseEntity {
 
         ContactEntity entity = (ContactEntity) o;
 
-        return id == entity.id;
+        return Objects.equals(id, entity.id);
     }
 
     public ContactEntity(UserEntity owner, String name) {
         this.owner = owner;
         this.name = name;
+    }
+
+    public ContactEntity(UserEntity owner, String name, List<ContactGroupEntity> groups) {
+        this.owner = owner;
+        this.name = name;
+        this.groups = groups;
     }
 }

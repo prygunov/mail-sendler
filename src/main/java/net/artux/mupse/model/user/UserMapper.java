@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 public interface UserMapper {
 
     @Mapping(target = "groups", ignore = true)
+    @Mapping(target = "token", ignore = true)
     UserEntity entity(RegisterUserDto dto);
 
     UserDto dto(UserEntity userEntity);

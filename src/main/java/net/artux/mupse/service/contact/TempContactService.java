@@ -29,7 +29,6 @@ public class TempContactService {
     private final ContactRepository repository;
     private final TempContactRepository tempContactRepository;
     private final ContactMapper mapper;
-
     private final UserService userService;
 
     public List<TempContactEntity> parseContacts(MultipartFile file) throws IOException {
@@ -41,15 +40,12 @@ public class TempContactService {
             if (row.getCell(0) != null && row.getCell(1) != null) {
                 String email = row.getCell(0).getStringCellValue();
                 String name = row.getCell(1).getStringCellValue();
+
                 if (!StringUtils.isEmpty(email)) {
                     TempContactEntity contactEntity = new TempContactEntity();
-                    contactEntity.setEmail(
-                            email
-                    );
+                    contactEntity.setEmail(email);
+                    contactEntity.setName(name);
 
-                    contactEntity.setName(
-                            name
-                    );
                     result.add(contactEntity);
                 }
             }

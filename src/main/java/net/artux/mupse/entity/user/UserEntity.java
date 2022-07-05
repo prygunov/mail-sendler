@@ -6,13 +6,9 @@ import lombok.Setter;
 import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.contact.ContactGroupEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -23,6 +19,8 @@ public class UserEntity extends BaseEntity {
     private String name;
     private String login;
     private String email;
+    @Column(unique = true)
+    private UUID token;
     private String password;
     @Enumerated(EnumType.STRING)
     private RoleType role;

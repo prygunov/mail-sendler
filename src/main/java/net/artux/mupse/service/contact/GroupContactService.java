@@ -1,17 +1,12 @@
 package net.artux.mupse.service.contact;
 
-import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.ContactGroupCreateDto;
-import net.artux.mupse.model.contact.ContactGroupDto;
-import net.artux.mupse.model.contact.CreateContactDto;
-import net.artux.mupse.model.contact.ParsingResult;
+import net.artux.mupse.model.contact.*;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 public interface GroupContactService {
@@ -20,18 +15,18 @@ public interface GroupContactService {
 
     ByteArrayInputStream exportContacts(Long id) throws IOException;
 
-    ResponsePage<ContactDto> getContacts(Long id, QueryPage queryPage);
+    ResponsePage<ContactDto> getContacts(Long id, QueryPage queryPage, String search);
+
+    ResponsePage<ContactGroupDto> getGroups(QueryPage page, String search);
+    ContactGroupDto createGroup(ContactGroupCreateDto createDto);
+    ContactGroupDto getGroup(Long id);
+    ContactGroupDto editGroup(Long id, ContactGroupCreateDto createDto);
+    boolean deleteGroup(Long id, boolean deleteContacts);
 
     ContactDto createContact(Long id, CreateContactDto dto);
-
-    ResponsePage<ContactGroupDto> getGroups(QueryPage page);
-
-
-    ContactGroupDto createGroup(ContactGroupCreateDto createDto);
-
     List<ContactDto> createContacts(Long id, List<CreateContactDto> dtos);
+    int putContacts(Long id, List<Long> ids);
+    boolean deleteContactsFromGroup(Long id, List<Long> ids);
 
-    boolean putContacts(Long id, List<Long> ids);
 
-    boolean deleteGroup(Long id, boolean deleteContacts);
 }

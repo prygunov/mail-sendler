@@ -21,8 +21,8 @@ public interface ContactMapper {
 
     @Mapping(target = "contacts", source = "entity", qualifiedByName = "countContacts")
     ContactGroupDto groupDto(ContactGroupEntity entity);
-    List<ContactGroupDto> groupDto(List<ContactGroupEntity> groupEntities);
 
+    List<ContactGroupDto> groupDto(List<ContactGroupEntity> groupEntities);
 
 
     ContactDto dto(ContactEntity entity);
@@ -32,6 +32,7 @@ public interface ContactMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "disabled", ignore = true)
     @Mapping(target = "groups", ignore = true)
+    @Mapping(target = "token", ignore = true)
     ContactEntity entity(TempContactEntity tempContactEntity);
 
 }
