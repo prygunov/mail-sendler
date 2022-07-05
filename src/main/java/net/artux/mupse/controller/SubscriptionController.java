@@ -6,8 +6,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.model.contact.ContactDto;
 import net.artux.mupse.model.contact.CreateContactDto;
-import net.artux.mupse.model.contact.ParsingResult;
-import net.artux.mupse.service.contact.ContactService;
 import net.artux.mupse.service.contact.SubscriptionService;
 import org.springframework.web.bind.annotation.*;
 
