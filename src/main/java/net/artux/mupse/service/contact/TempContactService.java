@@ -54,20 +54,29 @@ public class TempContactService {
         return result;
     }
 
+    //фильтр пришедших контактов
     private ContactContainer getContainer(List<TempContactEntity> parsedContacts) {
         UserEntity userEntity = userService.getUserEntity();
-        parsedContacts.removeIf(tempContactEntity -> StringUtils.isEmpty(tempContactEntity.getEmail()));
+        parsedContacts.removeIf(tempContactEntity -> StringUtils.isEmpty(tempContactEntity.getEmail())); // удаляем пустые
         for (TempContactEntity c : parsedContacts) {
+            //задаем владельца и почту в lowercase
             c.setOwner(userEntity);
             c.setEmail(c.getEmail().toLowerCase());
         }
-        tempContactRepository.saveAll(parsedContacts);
+        tempContactRepository.saveAll(parsedContacts); // сохраняем временные контакты
+
+        /*
+        * ниже сначала выгружаются контакты, которые отсутствуют у юзера - они в дальнейшем будут сохранены
+        * затем выгружаем контакты, которые уже есть у юзера, но при этом пришли с парсинга
+        *
+        */
 
         List<TempContactEntity> originalAccepted = tempContactRepository.getOriginalContacts(userEntity.getId());
         List<ContactEntity> collisionAccepted = repository.getCollisionContacts(userEntity.getId());
 
         List<ContactEntity> originals = originalAccepted.stream().map(mapper::entity).collect(Collectors.toList());
         repository.saveAll(originals);
+        tempContactRepository.deleteAllByOwner(userEntity); // удаляем временные контакты, иначе будут мешать в следующих загрузках
         return new ContactContainer(originals, collisionAccepted, parsedContacts.size());
     }
 

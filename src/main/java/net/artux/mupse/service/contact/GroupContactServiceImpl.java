@@ -94,7 +94,7 @@ public class GroupContactServiceImpl implements GroupContactService {
     }
 
     @Override
-    public ContactDto createContact(Long id, CreateContactDto dto) {
+    public ContactDto createContact(Long id, ContactCreateDto dto) {
         ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
         ContactEntity entity = contactService.createContactWithOwner(userService.getUserEntity(), dto);
         if (!groupEntity.getContacts().contains(entity)) {
@@ -133,9 +133,9 @@ public class GroupContactServiceImpl implements GroupContactService {
     }
 
     @Override
-    public List<ContactDto> createContacts(Long id, List<CreateContactDto> dtos) {
+    public List<ContactDto> createContacts(Long id, List<ContactCreateDto> dtos) {
         List<ContactDto> result = new LinkedList<>();
-        for (CreateContactDto contactDto : dtos) {
+        for (ContactCreateDto contactDto : dtos) {
             try {
                 result.add(createContact(id, contactDto));
             } catch (RuntimeException ignored) {

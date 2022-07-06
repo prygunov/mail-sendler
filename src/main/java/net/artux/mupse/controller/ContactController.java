@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ContactCreateDto;
 import net.artux.mupse.model.contact.ParsingResult;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
@@ -59,13 +59,13 @@ public class ContactController {
 
     @Operation(summary = "Ручное создание контактов")
     @PostMapping
-    public List<ContactDto> createContact(@Valid @RequestBody List<CreateContactDto> contactDto) {
+    public List<ContactDto> createContact(@Valid @RequestBody List<ContactCreateDto> contactDto) {
         return service.createContacts(contactDto);
     }
 
     @Operation(summary = "Изменение контакта")
     @PutMapping("/{id}")
-    public ContactDto editContact(@PathVariable("id") Long id, @Valid @RequestBody CreateContactDto contactDto) {
+    public ContactDto editContact(@PathVariable("id") Long id, @Valid @RequestBody ContactCreateDto contactDto) {
         return service.editContact(id, contactDto);
     }
 

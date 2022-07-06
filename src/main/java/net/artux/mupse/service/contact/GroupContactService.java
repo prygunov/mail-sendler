@@ -23,8 +23,8 @@ public interface GroupContactService {
     ContactGroupDto editGroup(Long id, ContactGroupCreateDto createDto);
     boolean deleteGroup(Long id, boolean deleteContacts);
 
-    ContactDto createContact(Long id, CreateContactDto dto);
-    List<ContactDto> createContacts(Long id, List<CreateContactDto> dtos);
+    ContactDto createContact(Long id, ContactCreateDto dto);
+    List<ContactDto> createContacts(Long id, List<ContactCreateDto> dtos);
     int putContacts(Long id, List<Long> ids);
     boolean deleteContactsFromGroup(Long id, List<Long> ids);
 

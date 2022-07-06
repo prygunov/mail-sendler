@@ -10,15 +10,10 @@ import java.util.List;
 @Data
 public class ContactDto {
 
-    @NotNull
     private Long id;
-
     private String name;
-    @NotEmpty
-    @Pattern(regexp = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
     private String email;
     private boolean disabled;
-
     private List<ContactGroupDto> groups;
 
 }

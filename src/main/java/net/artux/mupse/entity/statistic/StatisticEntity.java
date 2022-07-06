@@ -11,5 +11,6 @@ public class StatisticEntity extends BaseEntity {
 
     private int clicks;
     private int opened;
+    private int failed;
 
 }

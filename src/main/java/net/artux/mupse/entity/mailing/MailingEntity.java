@@ -5,11 +5,9 @@ import net.artux.mupse.entity.contact.ContactGroupEntity;
 import net.artux.mupse.entity.template.TemplateEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "mailing")
@@ -21,8 +19,8 @@ public class MailingEntity extends BaseEntity {
     @OneToOne
     private TemplateEntity template;
 
-    @ManyToOne
-    private ContactGroupEntity group;
+    @ManyToMany
+    private List<ContactGroupEntity> group;
 
     private MailingType type;
     private Date time;

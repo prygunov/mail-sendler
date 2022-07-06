@@ -5,7 +5,7 @@ import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.user.UserEntity;
 import net.artux.mupse.model.contact.ContactDto;
 import net.artux.mupse.model.contact.ContactMapper;
-import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ContactCreateDto;
 import net.artux.mupse.repository.contact.ContactRepository;
 import net.artux.mupse.repository.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public ContactDto subscribe(UUID userUuid, CreateContactDto dto) {
+    public ContactDto subscribe(UUID userUuid, ContactCreateDto dto) {
         UserEntity user = userRepository.findByToken(userUuid).orElseThrow();
         return contactMapper.dto(contactService.createContactWithOwner(user, dto));
     }

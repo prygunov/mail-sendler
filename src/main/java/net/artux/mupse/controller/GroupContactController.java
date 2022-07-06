@@ -82,7 +82,7 @@ public class GroupContactController {
 
     @Operation(summary = "Создание контактов в группе")
     @PostMapping("/{id}")
-    public List<ContactDto> createContacts(@PathVariable("id") Long id, @Valid List<CreateContactDto> dto) {
+    public List<ContactDto> createContacts(@PathVariable("id") Long id, @Valid List<ContactCreateDto> dto) {
         return service.createContacts(id, dto);
     }
 

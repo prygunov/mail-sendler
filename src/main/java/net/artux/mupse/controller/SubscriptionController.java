@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ContactCreateDto;
 import net.artux.mupse.service.contact.SubscriptionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +33,7 @@ public class SubscriptionController {
 
     @Operation(summary = "Первая подписка контакта")
     @PutMapping(value = "/subscribe")
-    public ContactDto subscribe(@Parameter(name = "Токен пользователя") @RequestParam UUID uuid, @RequestBody CreateContactDto dto) {
+    public ContactDto subscribe(@Parameter(name = "Токен пользователя") @RequestParam UUID uuid, @RequestBody ContactCreateDto dto) {
         return service.subscribe(uuid, dto);
     }
 

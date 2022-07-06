@@ -108,7 +108,7 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactEntity createContactWithOwner(UserEntity user, CreateContactDto dto) {
+    public ContactEntity createContactWithOwner(UserEntity user, ContactCreateDto dto) {
         if (repository.findByOwnerAndEmailIgnoreCase(userService.getUserEntity(), dto.getEmail()).isPresent())
             throw new RuntimeException("Контакт с таким адресом уже существует.");
 
@@ -121,10 +121,10 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public List<ContactDto> createContacts(List<CreateContactDto> dtos) {
+    public List<ContactDto> createContacts(List<ContactCreateDto> dtos) {
         UserEntity user = userService.getUserEntity();
         List<ContactDto> result = new LinkedList<>();
-        for (CreateContactDto contactDto : dtos) {
+        for (ContactCreateDto contactDto : dtos) {
             try {
                 result.add(mapper.dto(createContactWithOwner(user, contactDto)));
             } catch (RuntimeException ignored) {
@@ -148,7 +148,7 @@ public class ContactServiceImpl implements ContactService {
 
 
     @Override
-    public ContactDto editContact(Long id, CreateContactDto contactDto) {
+    public ContactDto editContact(Long id, ContactCreateDto contactDto) {
         ContactEntity entity = repository.findById(id).orElseThrow();
         entity.setEmail(contactDto.getEmail());
         entity.setName(contactDto.getName());
