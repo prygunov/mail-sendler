@@ -2,12 +2,13 @@ package net.artux.mupse.model.contact;
 
 import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.contact.ContactGroupEntity;
-import net.artux.mupse.entity.contact.TempContactEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import net.artux.mupse.entity.statistic.ContactEventEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface ContactMapper {
@@ -29,10 +30,10 @@ public interface ContactMapper {
 
     List<ContactDto> dto(List<ContactEntity> entities);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "disabled", ignore = true)
-    @Mapping(target = "groups", ignore = true)
-    @Mapping(target = "token", ignore = true)
-    ContactEntity entity(TempContactEntity tempContactEntity);
+    ContactEventDto dto(ContactEventEntity entity);
+
+    default String map(UUID uuid){
+        return uuid.toString();
+    }
 
 }

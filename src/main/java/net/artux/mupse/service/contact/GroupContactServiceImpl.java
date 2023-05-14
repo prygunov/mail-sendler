@@ -1,26 +1,34 @@
 package net.artux.mupse.service.contact;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import net.artux.mupse.entity.contact.ContactEntity;
 import net.artux.mupse.entity.contact.ContactGroupEntity;
-import net.artux.mupse.model.contact.*;
+import net.artux.mupse.model.contact.ContactDto;
+import net.artux.mupse.model.contact.ContactGroupCreateDto;
+import net.artux.mupse.model.contact.ContactGroupDto;
+import net.artux.mupse.model.contact.ContactMapper;
+import net.artux.mupse.model.contact.creation.ContactCreationResult;
+import net.artux.mupse.model.contact.creation.ContactCreationResultDto;
+import net.artux.mupse.model.contact.creation.ContactMassiveCreateDto;
+import net.artux.mupse.model.contact.creation.CreationMapper;
+import net.artux.mupse.model.exception.exceptions.NotFoundException;
 import net.artux.mupse.model.page.QueryPage;
 import net.artux.mupse.model.page.ResponsePage;
 import net.artux.mupse.repository.contact.ContactGroupRepository;
 import net.artux.mupse.repository.contact.ContactRepository;
 import net.artux.mupse.service.user.UserService;
 import net.artux.mupse.service.util.PageService;
-import net.artux.mupse.service.util.SortService;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -29,79 +37,59 @@ public class GroupContactServiceImpl implements GroupContactService {
     private final ContactGroupRepository groupRepository;
     private final ContactRepository contactRepository;
     private final ContactMapper mapper;
+    private final CreationMapper creationMapper;
 
     private final UserService userService;
-    private final TempContactService tempContactService;
-    private final ContactServiceImpl contactService;
-    private final SortService sortService;
+    private final ContactRegistrationService contactRegistrationService;
+    private final ContactService contactService;
     private final PageService pageService;
 
     @Override
-    public ParsingResult saveContactsFromFile(Long id, MultipartFile file) throws IOException {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
-        ContactContainer container = tempContactService.detect(file);
+    public ContactCreationResultDto saveContactsFromFile(Long id, MultipartFile file) throws IOException {
+        ContactGroupEntity groupEntity = getEntity(id);
+        ContactCreationResult result = contactRegistrationService.contactsContactsFromFile(file);
 
-        List<ContactEntity> saved = contactRepository.saveAll(container.getOriginalContacts());
-
-        List<ContactEntity> groupContacts = groupEntity.getContacts();
-        groupContacts.addAll(saved.stream()
-                .filter(t -> groupContacts.stream().noneMatch(t::equals))
-                .toList());
-
-        groupContacts.addAll(container.getCollisionContacts().stream()
-                .filter(t -> groupContacts.stream().noneMatch(t::equals))
-                .toList());
-        groupEntity.setContacts(groupContacts);
-        groupRepository.save(groupEntity);
-        int regexRejected = container.getRegexRejected();
-        int collisionRejected = container.getCollisionContacts().size();
-
-        return new ParsingResult(file.getOriginalFilename(), container.getAll(), saved.size() + container.getCollisionContacts().size(),
-                collisionRejected + regexRejected, regexRejected, collisionRejected);
+        return setupContactsWithGroup(groupEntity, result);
     }
 
     @Override
     public ByteArrayInputStream exportContacts(Long id) throws IOException {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+        ContactGroupEntity groupEntity = getEntity(id);
         return contactService.exportContacts(contactRepository.findAllByGroup(groupEntity));
-
     }
 
     @Override
     public ResponsePage<ContactDto> getContacts(Long id, QueryPage queryPage, String search) {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+        ContactGroupEntity groupEntity = getEntity(id);
 
         Page<ContactEntity> contactEntities;
         if (search == null)
-            contactEntities = contactRepository.findAllByGroup(groupEntity,
-                    sortService.getSortInfo(ContactDto.class, queryPage, "name"));
+            contactEntities = contactRepository.findAllByGroup(groupEntity, pageService.getPageable(queryPage));
         else
-            contactEntities = contactRepository.findAllByGroup(groupEntity, search,
-                    sortService.getSortInfo(ContactDto.class, queryPage, "name"));
+            contactEntities = contactRepository.findAllByGroup(groupEntity, search, pageService.getPageable(queryPage));
 
-        return pageService.mapDataPageToResponsePage(contactEntities, mapper.dto(contactEntities.getContent()));
+        return pageService.mapDataPageToResponsePage(contactEntities, mapper::dto);
     }
 
     @Override
     public ResponsePage<ContactGroupDto> getGroups(QueryPage page, String search) {
         ExampleMatcher matcher = ExampleMatcher.matching()
                 .withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
-        Example<ContactGroupEntity> example = Example.of(new ContactGroupEntity(userService.getUserEntity(), search), matcher);
+        Example<ContactGroupEntity> example = Example
+                .of(new ContactGroupEntity(userService.getUserEntity(), search), matcher);
 
-        Page<ContactGroupEntity> groupEntities = groupRepository.findAll(example,
-                sortService.getSortInfo(ContactGroupDto.class, page, "name"));
-        return pageService.mapDataPageToResponsePage(groupEntities, mapper.groupDto(groupEntities.getContent()));
+        Page<ContactGroupEntity> groupEntities = groupRepository.findAll(example, pageService.getPageable(page));
+        return pageService.mapDataPageToResponsePage(groupEntities, mapper::groupDto);
     }
 
     @Override
-    public ContactDto createContact(Long id, CreateContactDto dto) {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
-        ContactEntity entity = contactService.createContactWithOwner(userService.getUserEntity(), dto);
-        if (!groupEntity.getContacts().contains(entity)) {
-            groupEntity.getContacts().add(entity);
-            groupRepository.save(groupEntity);
-        }
-        return mapper.dto(entity);
+    public List<ContactGroupDto> getGroups(String search) {
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+        Example<ContactGroupEntity> example = Example
+                .of(new ContactGroupEntity(userService.getUserEntity(), search), matcher);
+
+        return mapper.groupDto(groupRepository.findAll(example));
     }
 
     @Override
@@ -118,10 +106,9 @@ public class GroupContactServiceImpl implements GroupContactService {
 
     @Override
     public ContactGroupDto editGroup(Long id, ContactGroupCreateDto createDto) {
-        ContactGroupEntity group = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+        ContactGroupEntity group = getEntity(id);
         group.setName(createDto.getName());
         group.setDescription(createDto.getDescription());
-        group.setOwner(userService.getUserEntity());
         group.setHexColor(createDto.getHexColor());
         return mapper.groupDto(groupRepository.save(group));
     }
@@ -129,48 +116,48 @@ public class GroupContactServiceImpl implements GroupContactService {
 
     @Override
     public ContactGroupDto getGroup(Long id) {
-        return mapper.groupDto(groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow());
+        return mapper.groupDto(getEntity(id));
     }
 
     @Override
-    public List<ContactDto> createContacts(Long id, List<CreateContactDto> dtos) {
-        List<ContactDto> result = new LinkedList<>();
-        for (CreateContactDto contactDto : dtos) {
-            try {
-                result.add(createContact(id, contactDto));
-            } catch (RuntimeException ignored) {
-            }
-        }
-        return result;
+    public ContactCreationResultDto createContacts(Long id, List<ContactMassiveCreateDto> dto) {
+        ContactGroupEntity group = getEntity(id);
+        ContactCreationResult result = contactRegistrationService.createContacts(dto);
+
+        return setupContactsWithGroup(group, result);
+    }
+
+    private ContactCreationResultDto setupContactsWithGroup(ContactGroupEntity group, ContactCreationResult result) {
+        Set<ContactEntity> groupContacts = group.getContacts();
+        groupContacts.addAll(result.getOriginalContacts());
+        groupContacts.addAll(result.getCollisionContacts());
+        group.setContacts(groupContacts);
+        groupRepository.save(group);
+
+        return creationMapper.dto(result);
     }
 
     @Override
-    public int putContacts(Long id, List<Long> ids) {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+    public boolean putContacts(Long id, List<Long> ids) {
+        ContactGroupEntity groupEntity = getEntity(id);
         List<ContactEntity> entities = contactRepository.findAllById(ids);
-        //TODO db logic
-        int addedEntities = 0;
-        for (ContactEntity c : entities) {
-            if (!groupEntity.getContacts().contains(c)) {
-                groupEntity.getContacts().add(c);
-                addedEntities++;
-            }
-        }
+        groupEntity.getContacts().addAll(entities);
         groupRepository.save(groupEntity);
-        return addedEntities;
+        return true;
     }
 
     @Override
     public boolean deleteContactsFromGroup(Long id, List<Long> ids) {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+        ContactGroupEntity groupEntity = getEntity(id);
         boolean result = groupEntity.getContacts().removeIf(contactEntity -> ids.contains(contactEntity.getId()));
         groupRepository.save(groupEntity);
         return result;
     }
 
     @Override
+    @Transactional
     public boolean deleteGroup(Long id, boolean deleteContacts) {
-        ContactGroupEntity groupEntity = groupRepository.findByOwnerAndId(userService.getUserEntity(), id).orElseThrow();
+        ContactGroupEntity groupEntity = getEntity(id);
         if (deleteContacts) {
             contactRepository.deleteAll(groupEntity.getContacts());
         }
@@ -178,4 +165,8 @@ public class GroupContactServiceImpl implements GroupContactService {
         return true;
     }
 
+    private ContactGroupEntity getEntity(Long id) {
+        return groupRepository.findByOwnerAndId(userService.getUserEntity(), id)
+                .orElseThrow(() -> new NotFoundException("Группа не найдена"));
+    }
 }

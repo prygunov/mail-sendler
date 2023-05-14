@@ -1,6 +1,10 @@
 package net.artux.mupse.configuration;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
+import net.artux.mupse.controller.ErrorAdvice;
+import net.artux.mupse.service.util.JwtRequestFilter;
 import net.artux.mupse.service.util.UserDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,23 +25,16 @@ import org.springframework.web.filter.CorsFilter;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserDetailService userDetailsService;
-    private final JwtFilter jwtFilter;
+    private final JwtRequestFilter jwtRequestFilter;
+    private final ErrorAdvice errorAdvice;
 
     private static final String[] WHITE_LIST = {
             "/v3/api-docs/*",
-            "/configuration/ui",
-            "/swagger-resources/**",
-            "/configuration/security",
-            "/swagger-ui/**",
-            "/swagger-ui",
-            "/swagger-ui.html",
-            "/webjars/**",
-            "/static/**",
             "/swagger-ui/**",
             "/user/register",
             "/authenticate",
-            "/subs/**",
-            "/proxy/**"
+            "/statistic/**",
+            "/subs/**"
     };
 
     @Override
@@ -48,8 +45,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(WHITE_LIST)
                 .permitAll()
                 .anyRequest().authenticated()
-                .and().sessionManagement().disable();
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .and().sessionManagement().disable()
+                .exceptionHandling().authenticationEntryPoint(errorAdvice);
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
@@ -77,5 +75,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor threadPoolTaskExecutor() {
+        return new ThreadPoolTaskExecutor();
+    }
+
+    @Bean
+    public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(ThreadPoolTaskExecutor delegate) {
+        return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
     }
 }

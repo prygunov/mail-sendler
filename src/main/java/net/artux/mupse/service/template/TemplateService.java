@@ -14,4 +14,6 @@ public interface TemplateService {
     boolean deleteTemplate(Long id);
 
     ResponsePage<TemplateDto> getTemplates(QueryPage page, String search);
+
+    TemplateDto getTemplate(Long id);
 }

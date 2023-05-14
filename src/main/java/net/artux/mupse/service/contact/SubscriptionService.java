@@ -1,7 +1,7 @@
 package net.artux.mupse.service.contact;
 
 import net.artux.mupse.model.contact.ContactDto;
-import net.artux.mupse.model.contact.CreateContactDto;
+import net.artux.mupse.model.contact.ContactCreateDto;
 
 import java.util.UUID;
 
@@ -11,5 +11,5 @@ public interface SubscriptionService {
 
     ContactDto unsubscribe(UUID contactUuid);
 
-    ContactDto subscribe(UUID userUuid, CreateContactDto dto);
+    ContactDto subscribe(UUID userUuid, ContactCreateDto dto);
 }

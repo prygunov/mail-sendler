@@ -12,9 +12,11 @@ import java.util.Optional;
 @Component
 public interface TemplateRepository extends JpaRepository<TemplateEntity, Long> {
 
+    Optional<TemplateEntity> findByOwnerAndTitle(UserEntity owner, String name);
     Optional<TemplateEntity> findByOwnerAndId(UserEntity owner, Long id);
 
-    Page<TemplateEntity> findAllByOwnerAndSubjectContainsIgnoreCase(UserEntity owner, String subject, Pageable pageable);
+    Page<TemplateEntity> findAllByOwner(UserEntity owner, Pageable pageable);
+    Page<TemplateEntity> findAllByOwnerAndTitleContainsIgnoreCase(UserEntity owner, String title, Pageable pageable);
 
     void deleteByOwnerAndId(UserEntity entity, Long id);
 

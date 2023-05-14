@@ -8,9 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedList;
+import java.util.function.Function;
 
 @Service
 public class PageService {
@@ -32,17 +31,14 @@ public class PageService {
         return result;
     }
 
-    // Сортировка по нескольким полям в одну сторону
-    public Pageable getPageableWithMultipleSort(String[] sortFields, QueryPage page) {
-        List<Sort.Order> orders = new ArrayList<>();
-        Arrays.stream(sortFields)
-                .forEach(field -> orders.add(new Sort.Order(page.getSortDirection(), field)));
-        Sort multipleSort = Sort.by(orders);
-        return PageRequest.of(subtractOne(page.getNumber()), page.getSize(), multipleSort);
-    }
-
     // Основной маппинг всех данных для возврата результирующей страницы
-    public <T, R> ResponsePage<R> mapDataPageToResponsePage(Page<T> dataPage, List<R> data) {
+    public <T, R> ResponsePage<R> mapDataPageToResponsePage(Page<T> dataPage, Function<T, R> mapFunc) {
+
+        LinkedList<R> data = new LinkedList<>();
+        for (T t : dataPage.getContent()) {
+            data.add(mapFunc.apply(t));
+        }
+
         return ResponsePage
                 .<R>builder()
                 .lastPage(dataPage.getTotalPages())

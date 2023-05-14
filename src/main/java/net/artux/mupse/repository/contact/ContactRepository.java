@@ -1,14 +1,14 @@
 package net.artux.mupse.repository.contact;
 
-import net.artux.mupse.entity.contact.ContactEntity;
-import net.artux.mupse.entity.contact.ContactGroupEntity;
-import net.artux.mupse.entity.user.UserEntity;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Component;
+import net.artux.mupse.entity.contact.ContactEntity;
+import net.artux.mupse.entity.contact.ContactGroupEntity;
+import net.artux.mupse.entity.user.UserEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,11 @@ import java.util.UUID;
 @Component
 public interface ContactRepository extends JpaRepository<ContactEntity, Long> {
 
-    Optional<ContactEntity> findByOwner(UserEntity owner);
+    @Query(value = "select distinct c.id, c.name, c.email, c.disabled, c.owner_id, c.token from contact c " +
+            "join contact_group_contacts cgc on cgc.contacts_id = c.id where cgc.groups_id in ?1 ", nativeQuery = true)
+    List<ContactEntity> findAllByGroups(long[] ids);
+
+    Optional<ContactEntity> findByOwnerAndEmail(UserEntity owner, String email);
 
     Optional<ContactEntity> findByOwnerAndId(UserEntity owner, Long id);
 
@@ -43,8 +47,11 @@ public interface ContactRepository extends JpaRepository<ContactEntity, Long> {
             "(select email from temp_contact tc where tc.owner_id = ?1)", nativeQuery = true)
     List<ContactEntity> getCollisionContacts(Long ownerId);
 
-    void deleteAllByOwner(UserEntity user);
+    void deleteAllByOwnerAndDisabledTrue(UserEntity user);
 
     Optional<ContactEntity> findByToken(UUID uuid);
 
+    void deleteAllByEmail(String email);
+
+    void deleteAllByOwner(UserEntity userEntity);
 }

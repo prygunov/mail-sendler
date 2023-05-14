@@ -7,9 +7,7 @@ import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
 import javax.persistence.*;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Setter
 @Getter
@@ -33,7 +31,7 @@ public class ContactEntity extends BaseEntity {
     @JoinTable(name = "contact_group_contacts",
             joinColumns = @JoinColumn(name = "contacts_id"),
             inverseJoinColumns = @JoinColumn(name = "groups_id"))
-    private List<ContactGroupEntity> groups;
+    private Set<ContactGroupEntity> groups = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
@@ -50,7 +48,13 @@ public class ContactEntity extends BaseEntity {
         this.name = name;
     }
 
-    public ContactEntity(UserEntity owner, String name, List<ContactGroupEntity> groups) {
+    public ContactEntity(UserEntity owner, String name, String email) {
+        this.owner = owner;
+        this.name = name;
+        this.email = email;
+    }
+
+    public ContactEntity(UserEntity owner, String name, Set<ContactGroupEntity> groups) {
         this.owner = owner;
         this.name = name;
         this.groups = groups;

@@ -1,30 +1,42 @@
 package net.artux.mupse.entity.mailing;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.contact.ContactGroupEntity;
-import net.artux.mupse.entity.template.TemplateEntity;
+import net.artux.mupse.entity.settings.UserMailEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import java.util.Date;
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.*;
 
+@Getter
+@Setter
 @Entity
-@Table(name = "mailing")
+@Table(name = "user_mailing")
 public class MailingEntity extends BaseEntity {
 
     @ManyToOne
     private UserEntity owner;
 
-    @OneToOne
-    private TemplateEntity template;
-
     @ManyToOne
-    private ContactGroupEntity group;
+    private UserMailEntity mail;
 
-    private MailingType type;
-    private Date time;
+    private String nameFrom;
+    private String subject;
+    @Lob
+    private String content;
+    private UUID token;
+
+    @ManyToMany
+    @JoinTable(name = "user_mailing_groups",
+            joinColumns = @JoinColumn(name = "mailing_entity_id"),
+            inverseJoinColumns = @JoinColumn(name = "groups_id"))
+    private Set<ContactGroupEntity> groups = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private MailingStatus status;
+    private LocalDateTime time;
 
 }

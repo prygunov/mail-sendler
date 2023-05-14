@@ -6,9 +6,7 @@ import lombok.Setter;
 import net.artux.mupse.entity.BaseEntity;
 import net.artux.mupse.entity.user.UserEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Getter
 @Setter
@@ -20,7 +18,9 @@ public class TemplateEntity extends BaseEntity {
     @ManyToOne
     private UserEntity owner;
 
+    private String title;
     private String subject;
+    @Lob
     private String content;
 
 }

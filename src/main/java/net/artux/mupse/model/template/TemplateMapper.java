@@ -3,7 +3,6 @@ package net.artux.mupse.model.template;
 import net.artux.mupse.entity.template.TemplateEntity;
 import net.artux.mupse.entity.user.UserEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 

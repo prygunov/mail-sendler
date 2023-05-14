@@ -8,7 +8,6 @@ import net.artux.mupse.entity.user.UserEntity;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.validation.constraints.NotEmpty;
 
 @Setter
 @Getter
@@ -18,7 +17,6 @@ public class TempContactEntity extends BaseEntity {
 
     private String name;
 
-    @NotEmpty
     private String email;
 
     @ManyToOne
